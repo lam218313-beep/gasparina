@@ -1,0 +1,12 @@
+node_modules
+dist
+*.local
+.env
+.env.e2e
+test-results/
+playwright-report/
+android/keystore.properties
+android/local.properties
+android/app/release/
+supabase/.temp/
+.superpowers/
