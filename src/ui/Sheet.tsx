@@ -5,15 +5,24 @@ import { X } from 'lucide-react';
 /** Panel que sube desde abajo (capturar, editar, confirmar). Escape o tocar el fondo lo cierra. */
 export const Sheet: React.FC<{ open: boolean; title: string; onClose: () => void; children: React.ReactNode }> = ({ open, title, onClose, children }) => {
   const panel = useRef<HTMLDivElement>(null);
+  // onClose casi siempre llega en línea (cambia en cada pintada del padre). Se guarda en un ref para que
+  // el efecto dependa solo de `open`: si no, cada tecla volvería a ejecutarlo y el foco saltaría al panel.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCloseRef.current();
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     panel.current?.focus();
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [open, onClose]);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+      if (opener?.isConnected) opener.focus();
+    };
+  }, [open]);
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/70 lg:p-6" onClick={onClose}>
