@@ -124,12 +124,13 @@ git add supabase && git commit -m "Base del cerebro: seis tablas con RLS de un s
 - Create: `supabase/migrations/20261022000002_triggers.sql`, `supabase/tests/02_triggers.sql`
 
 **Interfaces:**
-- Produces: `public.assign_short_id()` (trigger `before insert or update of area_id on items`): si `short_id is null` y `area_id is not null`, toma `prefix` del área, crea la fila de `area_counters` si no existe (`insert … on conflict do nothing`), incrementa `last_seq` con `for update` y escribe `short_id = prefix || '-' || seq`, `seq = last_seq`.
+- Produces: `public.item_ancestors(p_item uuid) returns table(id uuid, depth int)` (recursivo por `parent_id`, `depth` 1 = padre) y `public.effective_area(p_item uuid) returns uuid` (el `area_id` propio o el del ancestro más cercano que lo tenga), ambas `language sql stable`; se definen aquí porque el trigger de abajo las necesita (la tarea 4 las usa, no las crea).
+- Produces: `public.assign_short_id()` (trigger `before insert or update of area_id, parent_id on items`, `security definer`, `set search_path = public`): si `short_id is null`, calcula el área efectiva (`new.area_id`, o si es nulo, `effective_area(new.parent_id)` incluyendo al propio padre); si hay área efectiva, toma su `prefix`, crea la fila de `area_counters` si no existe (`insert … on conflict do nothing`), incrementa `last_seq` con `for update` y escribe `short_id = prefix || '-' || seq`, `seq = last_seq`. Sin área efectiva, no hace nada.
 - Produces: `public.guard_item_parent()` (`before insert or update of parent_id on items`): lanza `raise exception 'ciclo'` si `parent_id = id` o si `id` está entre los ancestros de `parent_id` (recorrido recursivo, máximo 20 niveles, si pasa de 20 lanza `'demasiada profundidad'`).
 - Produces: `public.touch_item()` (`before update on items`): `updated_at = now()`, `version = old.version + 1`; si `status` pasa a `hecho` y `done_at is null` → `done_at = now()`; si sale de `hecho` → `done_at = null`.
 - Produces: `public.log_item_change()` (`after insert or update on items`, `security definer`): en insert escribe un evento `field = 'creado'`, `after = to_jsonb(new)`; en update, un evento por cada campo cambiado de la lista `status, importance, parent_id, area_id, title, due_at, start_at, focus_on, kind`, con `before`/`after` del valor y `actor = coalesce(current_setting('cerebro.actor', true), 'user')`.
 
-- [ ] **Step 1: Escribir `02_triggers.sql`** con `plan(8)` como el usuario semilla: (a) insertar un ítem con `area_id` = Pixely → `short_id = 'PIX-1'`; (b) el segundo → `'PIX-2'`; (c) un ítem sin área no tiene `short_id`, y al asignarle área Universidad recibe `'UNI-1'`; (d) `update items set parent_id = id` lanza `ciclo`; (e) A padre de B, luego `update B set parent_id = A`… y `update A set parent_id = B` lanza `ciclo`; (f) pasar a `hecho` llena `done_at` y volver a `siguiente` lo vacía; (g) tras un insert hay exactamente 1 evento `creado`; (h) cambiar `status` e `importance` en un solo update crea 2 eventos con `before`/`after` correctos.
+- [ ] **Step 1: Escribir `02_triggers.sql`** con `plan(9)` como el usuario semilla: (a) insertar un ítem con `area_id` = Pixely → `short_id = 'PIX-1'`; (b) el segundo → `'PIX-2'`; (c) un ítem sin área ni padre no tiene `short_id`, y al asignarle área Universidad recibe `'UNI-1'`; (c2) un ítem sin área cuyo `parent_id` es el proyecto Pixely de (a) recibe `'PIX-3'` al insertarse; (d) `update items set parent_id = id` lanza `ciclo`; (e) A padre de B, luego `update B set parent_id = A`… y `update A set parent_id = B` lanza `ciclo`; (f) pasar a `hecho` llena `done_at` y volver a `siguiente` lo vacía; (g) tras un insert hay exactamente 1 evento `creado`; (h) cambiar `status` e `importance` en un solo update crea 2 eventos con `before`/`after` correctos.
 
 - [ ] **Step 2: Correr y ver que falla**
 
@@ -157,9 +158,8 @@ git add supabase && git commit -m "Disparadores: código corto por área, histor
 - Create: `supabase/migrations/20261022000003_lectura.sql`, `supabase/tests/03_lectura.sql`
 
 **Interfaces:**
-- Produces: `public.item_ancestors(p_item uuid) returns table(id uuid, depth int)` (recursivo por `parent_id`, `depth` 1 = padre).
-- Produces: `public.effective_area(p_item uuid) returns uuid`: el `area_id` propio o el del ancestro más cercano que lo tenga.
-- Produces: `public.effective_importance(p_item uuid) returns smallint`: igual, con `importance`.
+- Consumes: `public.item_ancestors` y `public.effective_area` ya existen (tarea 3); no se vuelven a crear.
+- Produces: `public.effective_importance(p_item uuid) returns smallint`: el `importance` propio o el del ancestro más cercano que lo tenga.
 - Produces: `public.item_path(p_item uuid) returns text`: `'Pixely › Cliente X › Campaña'` (nombre del área efectiva, luego títulos de ancestros de raíz a padre, separados por `' › '`; sin el propio ítem).
 - Produces: `public.project_progress(p_item uuid) returns table(done int, total int)`: descendientes con `kind = 'tarea'`, `done` = los `hecho`.
 - Produces: vista `public.v_items` = `items.*` + `effective_area_id`, `effective_importance`, `path`, `area_slug`, `area_color` (de la área efectiva), con `security_invoker = on`.
@@ -204,7 +204,7 @@ git add supabase src/lib/database.types.ts && git commit -m "Funciones de lectur
 - Produces: `src/lib/auth.tsx`: `AuthProvider`, `useAuth(): { session: Session | null; loading: boolean; signIn(email: string, password: string): Promise<void>; signOut(): Promise<void> }` sobre `supabase.auth.onAuthStateChange`.
 - Produces: `src/lib/query.ts`: `queryClient` (staleTime 60 s, gcTime 24 h, retry 2, `networkMode: 'offlineFirst'` en queries y mutations) y `persister = createSyncStoragePersister({ storage: window.localStorage, key: 'cerebro-cache' })`.
 - Produces: rutas `/entrar`, y bajo `RequireAuth` + `TabsLayout`: `/` (Hoy, placeholder), `/bandeja`, `/mapa`.
-- Produces: `e2e/fixtures.ts` exporta `test`, `expect` con la opción `signedIn` (por defecto true: inicia sesión por la pantalla Entrar con el usuario semilla antes de cada prueba y guarda `storageState` por worker) y el mismo guardia de Partners (falla si hay `pageerror`, `console.error` o el texto "Algo salió mal").
+- Produces: `e2e/fixtures.ts` exporta `test`, `expect` con la opción `signedIn` (por defecto true) y el mismo guardia de Partners (falla si hay `pageerror`, `console.error` o el texto "Algo salió mal"). Con `signedIn`, el fixture crea **un usuario nuevo por archivo de prueba** (worker-scoped) con la API admin del Supabase local (`service_role` local leída de `supabase status -o env` en `.env.e2e`; correo `e2e-<nombre-del-spec>-<worker>@cerebro.local`), entra por la pantalla Entrar una vez y reutiliza el `storageState`; así cada spec parte de una base limpia. `entrar.spec.ts` usa `signedIn: false` y el usuario semilla.
 - Produces: `playwright.config.ts` con `baseURL: http://localhost:4320`, proyecto `android` (Pixel 7), `webServer` = `vite build --mode e2e && vite preview --port 4320`, `locale: es-PE`, `timezoneId: America/Lima`. `.env.e2e` apunta a `http://127.0.0.1:54321` y la llave `anon` local (sale de `supabase status -o env`, no se escribe en el chat).
 
 - [ ] **Step 1: Escribir `e2e/entrar.spec.ts`** (con `signedIn: false`): (a) abrir `/` redirige a `/entrar`; (b) correo y contraseña del usuario semilla → llega a `/` y se ve el título `Hoy.`; (c) contraseña incorrecta muestra `Correo o contraseña incorrectos` y sigue en `/entrar`.
@@ -233,7 +233,8 @@ git add -A && git commit -m "Entrar con correo y contraseña, sesión persistent
 
 **Files:**
 - Create: `src/lib/types.ts`, `src/lib/cerebro.ts`, `src/lib/queries.ts`, `src/lib/dates.ts`
-- Create: `e2e/areas.spec.ts`
+- Create: `e2e/areas.spec.ts`, `src/features/mapa/MapaScreen.tsx` (provisional: lista de áreas; la tarea 9 lo completa)
+- Modify: `src/layouts/RequireAuth.tsx` (llama `ensureDefaultAreas()` una vez por sesión)
 
 **Interfaces:**
 - Produces: tipos en `src/lib/types.ts`: `type ItemStatus = 'bandeja'|'siguiente'|'en_curso'|'esperando'|'algun_dia'|'hecho'|'descartado'`; `type ItemKind = 'tarea'|'proyecto'|'meta'|'idea'|'informe'|'evento'`; `type Importance = 1|2|3|4|5`; `type Area = Database['public']['Tables']['areas']['Row']`; `type Item = Database['public']['Views']['v_items']['Row']`; `type ItemEvent = Database['public']['Tables']['item_events']['Row']`; `interface NewItem { id?: string; title: string; kind?: ItemKind; areaId?: string | null; parentId?: string | null; importance?: Importance | null; status?: ItemStatus; dueAt?: string | null; startAt?: string | null; durationMin?: number | null; evening?: boolean; originSourceId?: string | null; originItemId?: string | null; body?: string | null }`; `type ItemPatch = Partial<NewItem> & { focusOn?: string | null; version: number }`.
@@ -241,7 +242,7 @@ git add -A && git commit -m "Entrar con correo y contraseña, sesión persistent
 - Produces: `src/lib/dates.ts`: `todayLima(): string` (`YYYY-MM-DD` en `America/Lima`), `fmtHour(iso: string): string` (`'14:30'`), `fmtDay(iso: string): string` (`'mié 22 oct'`).
 - Produces: hooks en `src/lib/queries.ts` con claves `['areas']`, `['items', filter]`, `['item', id]`, `['events', id]`, `['today', day]`: `useAreas()`, `useItems(filter)`, `useItem(id)`, `useEvents(id)`, `useToday(day)`, `useCreateItem()`, `useUpdateItem()`. Las mutaciones invalidan `['items']`, `['today']`, `['item', id]`, `['events', id]`; `useUpdateItem` hace actualización optimista de `['item', id]`.
 
-- [ ] **Step 1: Escribir `e2e/areas.spec.ts`**: tras entrar por primera vez con un usuario nuevo creado para la prueba (vía la API admin local en el `beforeAll`, con la llave `service_role` local leída de `supabase status -o env`), existen 6 áreas en la pestaña Mapa en este orden: Pixely, Trabajo fijo, Trabajos temporales, Universidad, Emprendimientos, Personal.
+- [ ] **Step 1: Escribir `e2e/areas.spec.ts`**: tras entrar por primera vez con el usuario nuevo que crea el fixture, existen 6 áreas en la pestaña Mapa en este orden: Pixely, Trabajo fijo, Trabajos temporales, Universidad, Emprendimientos, Personal.
 
 - [ ] **Step 2: Correr y ver que falla**
 
@@ -266,7 +267,7 @@ git add -A && git commit -m "Capa de datos del cerebro y las seis áreas inicial
 ### Task 7: Capturar y Bandeja
 
 **Files:**
-- Create: `src/features/capturar/CapturarSheet.tsx`, `src/features/bandeja/BandejaScreen.tsx`, `src/features/bandeja/BandejaCard.tsx`, `src/ui/AreaChip.tsx`, `src/ui/ImportanceDots.tsx`
+- Create: `src/features/capturar/CapturarSheet.tsx`, `src/features/bandeja/BandejaScreen.tsx`, `src/features/bandeja/BandejaCard.tsx`, `src/ui/AreaChip.tsx`, `src/ui/ImportanceDots.tsx`, `src/features/mapa/AreaScreen.tsx` (provisional: lista de ítems del área con código y hora; la tarea 9 lo completa) y su ruta `mapa/area/:slug`
 - Modify: `src/layouts/TabsLayout.tsx` (botón flotante `+` sobre la barra, abre la hoja desde cualquier pestaña)
 - Create: `e2e/capturar.spec.ts`
 
@@ -343,7 +344,7 @@ git add -A && git commit -m "Pantalla Hoy: para ahora, agenda, esta noche y lo q
 - Consumes: `useAreas()`, `useItems(...)`, `useItem(id)`, `useEvents(id)`, `projectProgress`, `useUpdateItem()`, `useCreateItem()`.
 - Produces: `MapaScreen`: título `Mapa.`; una tarjeta por área con su color, nombre, cuántos ítems abiertos y cuántos proyectos; tocar abre `/mapa/area/:slug`.
 - Produces: `AreaScreen`: nombre del área; sección **Proyectos** (ítems `kind = proyecto` del área con barra de progreso `done/total`) y **Sueltas** (tareas sin padre); botón `Nuevo proyecto` (crea `kind: 'proyecto'`, `status: 'en_curso'`, con `areaId`). Tocar un ítem abre `/mapa/item/:id`.
-- Produces: `ItemScreen`: `DetailScreen` con el código corto al centro; ruta (`item.path`) en gris arriba del título; chips de estado (menú para cambiar entre los 7 estados), importancia (`ImportanceDots`), fecha límite, hora si es evento; bloque **Nació de** (fuente u ítem de origen, o `Captura manual`); bloque **Dentro** (hijos como `ItemRow`, botón `Añadir tarea` que crea con `parentId`); bloque **Historial** (`Historial`). Botón `Editar` abre `EditarSheet` (título, cuerpo, padre por búsqueda de título, fecha, hora).
+- Produces: `ItemScreen`: `DetailScreen` con el código corto al centro; ruta (`item.path`) en gris arriba del título; chips de estado (menú para cambiar entre los 7 estados), importancia (`ImportanceDots`), fecha límite, hora si es evento; bloque **Nació de** (fuente u ítem de origen, o `Captura manual`); bloque **Dentro** (hijos como `ItemRow`, botón `Añadir tarea` que crea con `parentId: item.id`, `areaId: null` (hereda) y `status: 'siguiente'`); bloque **Historial** (`Historial`). Botón `Editar` abre `EditarSheet` (título, cuerpo, padre por búsqueda de título, fecha, hora).
 - Produces: `Historial({ events })`: una línea por evento, `fmtDay` + hora, actor (`Tú`, `Claude`, `Automático`), y el cambio en palabras: `Estado: bandeja → siguiente`, `Importancia: — → 4`, `Creado`.
 - Produces: `ItemRow({ item })`: título, código, puntos de importancia, estado como `StatusChip`.
 
