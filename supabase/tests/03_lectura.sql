@@ -3,7 +3,7 @@
 --
 -- Se actúa como el usuario semilla ya conectado (rol authenticated), igual que en 02_triggers.sql.
 begin;
-select plan(8);
+select plan(10);
 
 select set_config(
   'test.dueno',
@@ -59,26 +59,50 @@ select is(
   'el proyecto va 1 de 3'
 );
 
--- (e) "Vence hoy" se decide en hora de Lima: las 23:30 del 22 (04:30 UTC del 23) vence el 22;
--- las 23:30 del 21 (04:30 UTC del 22) no.
+-- (d2) Una tarea descartada no cuenta: descartar es el único "borrar" y no debe dejar la barra incompleta.
+insert into items (title, parent_id, status)
+values ('Tarea D', (select id from items where title = 'Proyecto X'), 'siguiente');
+update items set status = 'descartado' where title = 'Tarea D';
+select is(
+  (select array[done, total] from project_progress((select id from items where title = 'Proyecto X'))),
+  array[1, 3],
+  'una tarea descartada no cuenta en el progreso'
+);
+
+-- (e) "Vence" se decide en hora de Lima: las 23:30 del 21 (04:30 UTC del 22) vence el 21, y las
+-- 23:30 del 22 (04:30 UTC del 23) todavía no vence el 21.
 insert into items (title, due_at) values ('Vence tarde', '2026-10-23 04:30+00');
 insert into items (title, due_at) values ('Vence ayer', '2026-10-22 04:30+00');
+select is(
+  array(
+    select i.title from today_items('2026-10-21') t join items i on i.id = t.item_id
+    where t.bucket = 'vence' order by i.title
+  ),
+  array['Vence ayer'],
+  'vence respeta la medianoche de Lima'
+);
+
+-- (e2) Lo que venció antes y sigue abierto no desaparece: el 22 aparecen lo de hoy y lo atrasado.
 select is(
   array(
     select i.title from today_items('2026-10-22') t join items i on i.id = t.item_id
     where t.bucket = 'vence' order by i.title
   ),
-  array['Vence tarde'],
-  'vence hoy respeta la medianoche de Lima'
+  array['Vence ayer', 'Vence tarde'],
+  'lo atrasado sigue apareciendo en vence hasta que se cierre'
 );
 
--- (f) Como máximo 3 en foco, los de mayor importancia, en ese orden.
+-- (f) Como máximo 3 en foco, los de mayor importancia, en ese orden (with ordinality conserva el
+-- orden que devuelve la función; un join suelto no lo garantiza).
 insert into items (title, importance, focus_on) values
   ('F2', 2, '2026-10-22'), ('F5', 5, '2026-10-22'), ('F3', 3, '2026-10-22'), ('F4', 4, '2026-10-22');
 select is(
   array(
-    select i.title from today_items('2026-10-22') t join items i on i.id = t.item_id
+    select i.title
+    from today_items('2026-10-22') with ordinality as t(item_id, bucket, sort_at, n)
+    join items i on i.id = t.item_id
     where t.bucket = 'foco'
+    order by t.n
   ),
   array['F5', 'F4', 'F3'],
   'foco devuelve solo los 3 más importantes, ordenados'

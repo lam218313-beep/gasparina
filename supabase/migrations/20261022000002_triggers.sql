@@ -233,3 +233,9 @@ create trigger items_4_log_change
 -- trabajan con los permisos de quien las llama (RLS aplica) y no necesitan este cuidado.
 revoke execute on function public.assign_short_id(), public.log_item_change()
   from public, anon, authenticated;
+
+-- Las dos funciones de lectura las usan la vista v_items y la guardia de ciclos con los permisos de
+-- quien llama: EXECUTE explícito, para no depender del EXECUTE por defecto de PUBLIC (que la nube
+-- puede retirar al endurecer el proyecto).
+grant execute on function public.item_ancestors(uuid), public.effective_area(uuid)
+  to authenticated, service_role;

@@ -65,11 +65,12 @@ as $$
     join bajada b on i.parent_id = b.id
     where b.depth < 50
   )
+  -- Lo descartado no cuenta: descartar es el único "borrar" y no debe dejar la barra incompleta.
   select
     count(*) filter (where b.status = 'hecho')::int as done,
     count(*)::int as total
   from bajada b
-  where b.kind = 'tarea';
+  where b.kind = 'tarea' and b.status <> 'descartado';
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -96,7 +97,7 @@ left join public.areas a on a.id = ea.area_id;
 --   foco   = focus_on = p_day, como máximo 3, por importancia efectiva.
 --   noche  = evening y (ocurre en p_day o focus_on = p_day).
 --   agenda = ocurre en p_day y no es de noche.
---   vence  = due_at cae en p_day.
+--   vence  = due_at cae en p_day o antes (lo atrasado sigue saliendo hasta que se cierre).
 -- "Cae en p_day" se mide en hora de Lima. "Ocurre en p_day": start_at cae en p_day, o el evento es
 -- semanal, empezó ese día o antes, y cae en el mismo día de la semana; entonces sort_at es p_day con
 -- la hora de start_at. Fuera quedan hecho y descartado.
@@ -144,9 +145,10 @@ as $$
     join base b on b.id = o.id
     where o.sort_at is not null and not b.evening
     union all
+    -- Vence hoy o venció antes y sigue abierto: lo atrasado no desaparece de Hoy hasta cerrarse.
     select b.id, 'vence', b.due_at, 0, 4
     from base b
-    where (b.due_at at time zone 'America/Lima')::date = p_day
+    where (b.due_at at time zone 'America/Lima')::date <= p_day
   ),
   unico as (
     select distinct on (id) id, bucket, sort_at, ord, pri

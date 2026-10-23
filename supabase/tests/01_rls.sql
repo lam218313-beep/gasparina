@@ -2,7 +2,7 @@
 -- deja a cada dueño ver y crear solo lo suyo, nadie puede borrar, y la base
 -- rechaza un título en blanco o una importancia fuera de 1 a 5.
 begin;
-select plan(6);
+select plan(10);
 
 -- (a) Existen las tablas del cerebro (si falta alguna, la prueba dice cuál).
 select is(
@@ -80,6 +80,36 @@ select throws_like(
   $$insert into items (title, importance) values ('Con importancia', 7)$$,
   '%violates check constraint "items_importance_range"%',
   'una importancia de 7 viola la restricción'
+);
+
+-- (g) El dueño no puede regalar su fila: cambiar owner_id lo frena la política de update.
+select throws_ok(
+  $$update items set owner_id = gen_random_uuid() where title = 'Probar'$$,
+  '42501',
+  null,
+  'cambiar el owner_id de una fila propia viola la política'
+);
+
+-- (h) Tampoco puede crear filas a nombre de otro.
+select throws_ok(
+  $$insert into items (title, owner_id) values ('Ajena', gen_random_uuid())$$,
+  '42501',
+  null,
+  'crear una fila con owner_id ajeno viola la política'
+);
+
+-- (i) Un tipo que no existe lo rechaza la base.
+select throws_like(
+  $$insert into items (title, kind) values ('Rara', 'cosa')$$,
+  '%violates check constraint "items_kind_check"%',
+  'un kind fuera de la lista viola la restricción'
+);
+
+-- (j) Un estado que no existe lo rechaza la base.
+select throws_like(
+  $$insert into items (title, status) values ('Rara', 'raro')$$,
+  '%violates check constraint "items_status_check"%',
+  'un status fuera de la lista viola la restricción'
 );
 
 select * from finish();
