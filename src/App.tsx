@@ -7,6 +7,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import { RequireAuth } from './layouts/RequireAuth';
 import { TabsLayout } from './layouts/TabsLayout';
 import { EntrarScreen } from './features/entrar/EntrarScreen';
+import { MapaScreen } from './features/mapa/MapaScreen';
 import { startNativeShell } from './lib/native';
 import { Screen } from '@/ui';
 import { RouteError } from '@/ui/ErrorBoundary';
@@ -27,7 +28,7 @@ const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
         children: [
           { index: true, element: <Pendiente title="Hoy" text="Lo que toca ahora y el resto del día." /> },
           { path: 'bandeja', element: <Pendiente title="Bandeja" text="Lo capturado, todavía sin ordenar." /> },
-          { path: 'mapa', element: <Pendiente title="Mapa" text="Área, proyecto y tarea." /> },
+          { path: 'mapa', element: <MapaScreen /> },
         ],
       },
     ],
