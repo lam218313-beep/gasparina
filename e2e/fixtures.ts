@@ -40,7 +40,13 @@ async function createFileUser(browser: Browser, baseURL: string, file: string, w
   const email = `e2e-${slug}-${worker}-${Date.now().toString(36)}@cerebro.local`;
   const password = `e2e-${randomUUID()}`;
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  // El Supabase local tarda unos segundos en responder tras un `db reset`: se insiste un poco antes de rendirse.
+  let error: { message: string } | null = null;
+  for (let intento = 1; intento <= 5; intento++) {
+    ({ error } = await admin.auth.admin.createUser({ email, password, email_confirm: true }));
+    if (!error) break;
+    await new Promise((r) => setTimeout(r, 2000 * intento));
+  }
   if (error) throw new Error(`No se pudo crear el usuario de prueba ${email}: ${error.message}`);
 
   // Entra una vez por la pantalla Entrar y guarda la sesión para todas las pruebas del archivo.
