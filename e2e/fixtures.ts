@@ -90,3 +90,4 @@ export const test = base.extend<Options>({
 const expectedConsole = (t: string) => /Failed to load resource: (the server responded with a status of [45]\d\d|net::ERR_INTERNET_DISCONNECTED)/.test(t);
 
 export { expect };
+export type { Page } from '@playwright/test';

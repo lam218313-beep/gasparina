@@ -8,6 +8,8 @@ import { RequireAuth } from './layouts/RequireAuth';
 import { TabsLayout } from './layouts/TabsLayout';
 import { EntrarScreen } from './features/entrar/EntrarScreen';
 import { MapaScreen } from './features/mapa/MapaScreen';
+import { AreaScreen } from './features/mapa/AreaScreen';
+import { BandejaScreen } from './features/bandeja/BandejaScreen';
 import { startNativeShell } from './lib/native';
 import { Screen } from '@/ui';
 import { RouteError } from '@/ui/ErrorBoundary';
@@ -27,8 +29,9 @@ const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
         element: <TabsLayout />,
         children: [
           { index: true, element: <Pendiente title="Hoy" text="Lo que toca ahora y el resto del día." /> },
-          { path: 'bandeja', element: <Pendiente title="Bandeja" text="Lo capturado, todavía sin ordenar." /> },
+          { path: 'bandeja', element: <BandejaScreen /> },
           { path: 'mapa', element: <MapaScreen /> },
+          { path: 'mapa/area/:slug', element: <AreaScreen /> },
         ],
       },
     ],

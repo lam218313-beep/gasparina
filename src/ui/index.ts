@@ -7,3 +7,6 @@ export * from './TabBar';
 export * from './Sheet';
 export * from './States';
 export * from './ErrorBoundary';
+export * from './AreaChip';
+export * from './ImportanceDots';
+export * from './Toast';
