@@ -1,0 +1,69 @@
+# Copia semanal de la base de Cerebro (Supabase, plan gratuito: no trae respaldos propios).
+# Cada lunes a las 3:47 a. m. de Lima guarda un volcado comprimido como artefacto privado del repo,
+# que se conserva 90 días. También se puede correr a mano desde Actions → "Respaldo de la base" → Run workflow.
+# Necesita el secreto SUPABASE_DB_URL (cadena "Session pooler" de Supabase); ver docs/operacion.md.
+name: Respaldo de la base
+
+on:
+  schedule:
+    - cron: '47 8 * * 1'   # lunes 08:47 UTC = 03:47 Lima
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Comprobar que el secreto existe
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::error::Falta el secreto SUPABASE_DB_URL (ver docs/operacion.md)"; exit 1
+          fi
+
+      - name: Volcar la base (pg_dump 17, igual que el servidor)
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +%Y-%m-%d)
+          mkdir -p respaldo
+          # Pistas sin revelar la clave: a qué servidor apunta la dirección.
+          HOST=$(printf '%s' "$DB_URL" | sed -E 's#^[a-z]+://[^@]*@##; s#[:/].*$##')
+          case "$HOST" in
+            *pooler.supabase.com) echo "Servidor: $HOST (Session pooler, correcto)";;
+            db.*.supabase.co) echo "::error::La dirección es la 'Direct connection'. Usa la de 'Session pooler' (ver docs/operacion.md)"; exit 1;;
+            *) echo "::error::La dirección no parece de Supabase (servidor: $HOST)"; exit 1;;
+          esac
+          if printf '%s' "$DB_URL" | grep -q 'YOUR-PASSWORD'; then
+            echo "::error::La dirección todavía dice [YOUR-PASSWORD]: reemplázalo por la contraseña de la base"; exit 1
+          fi
+          docker pull -q postgres:17 >/dev/null
+          if ! docker run --rm -e DB_URL -v "$PWD/respaldo:/out" postgres:17 \
+            sh -c 'pg_dump "$DB_URL" --format=custom --no-owner --no-privileges \
+                     --schema=public --schema=auth \
+                     --file=/out/cerebro-'"$STAMP"'.dump' 2> error.txt; then
+            # Nunca se muestra el mensaje original: pg_dump puede citar partes de la dirección (y de la clave).
+            if grep -qi 'password authentication failed' error.txt; then MSG='La contraseña de la base no es correcta'
+            elif grep -qiE 'unexpected spaces|invalid URI|invalid connection option|missing "="' error.txt; then MSG='La dirección está mal escrita: debe ser una sola línea que empieza con postgresql:// y sin espacios'
+            elif grep -qiE 'could not translate host|Network is unreachable|timeout|Connection refused' error.txt; then MSG='No se pudo llegar al servidor: revisa que sea la dirección de Session pooler'
+            elif grep -qi 'Tenant or user not found' error.txt; then MSG='El usuario de la dirección no es correcto: debe ser postgres.zcjufyrloyoewkezqucx'
+            else MSG='pg_dump falló por otro motivo'; fi
+            echo "::error::$MSG (ver docs/operacion.md)"
+            exit 1
+          fi
+          ls -lh respaldo
+          SIZE=$(stat -c %s respaldo/*.dump)
+          if [ "$SIZE" -lt 5000 ]; then echo "::error::El respaldo pesa solo $SIZE bytes"; exit 1; fi
+
+      - name: Guardar el respaldo (privado, 90 días)
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-${{ github.run_number }}
+          path: respaldo/*.dump
+          retention-days: 90
+          if-no-files-found: error
