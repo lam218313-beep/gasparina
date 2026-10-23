@@ -1,24 +1,18 @@
 /**
  * Cada pantalla tiene su propia dirección, así el botón atrás del celular funciona.
- * Las tres pestañas todavía son marcadores; las pantallas de verdad llegan en las tareas siguientes.
+ * Entrar, las tres pestañas (Hoy, Bandeja, Mapa) y el detalle de un área.
  */
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { RequireAuth } from './layouts/RequireAuth';
 import { TabsLayout } from './layouts/TabsLayout';
 import { EntrarScreen } from './features/entrar/EntrarScreen';
+import { HoyScreen } from './features/hoy/HoyScreen';
 import { MapaScreen } from './features/mapa/MapaScreen';
 import { AreaScreen } from './features/mapa/AreaScreen';
 import { BandejaScreen } from './features/bandeja/BandejaScreen';
 import { startNativeShell } from './lib/native';
-import { Screen } from '@/ui';
 import { RouteError } from '@/ui/ErrorBoundary';
-
-const Pendiente: React.FC<{ title: string; text: string }> = ({ title, text }) => (
-  <Screen title={title}>
-    <p className="m-0 text-[15px] leading-relaxed text-text-2">{text}</p>
-  </Screen>
-);
 
 const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
   { path: '/entrar', element: <EntrarScreen /> },
@@ -28,7 +22,7 @@ const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
       {
         element: <TabsLayout />,
         children: [
-          { index: true, element: <Pendiente title="Hoy" text="Lo que toca ahora y el resto del día." /> },
+          { index: true, element: <HoyScreen /> },
           { path: 'bandeja', element: <BandejaScreen /> },
           { path: 'mapa', element: <MapaScreen /> },
           { path: 'mapa/area/:slug', element: <AreaScreen /> },

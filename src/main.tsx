@@ -11,7 +11,12 @@ import './styles.css';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: CACHE_MAX_AGE }}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: CACHE_MAX_AGE }}
+        // Lo guardado se muestra al instante, pero puede ser viejo: apenas se restaura, todo se vuelve a consultar.
+        onSuccess={() => { void queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries()); }}
+      >
         <AuthProvider>
           <App />
         </AuthProvider>

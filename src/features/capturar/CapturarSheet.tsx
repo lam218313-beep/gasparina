@@ -27,6 +27,7 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState(60);
   const [semanal, setSemanal] = useState(false);
+  const [vence, setVence] = useState('');
   const [noche, setNoche] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
@@ -40,7 +41,7 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
 
   const reset = () => {
     setTitle(''); setAreaId(null); setEvento(false); setDay(todayLima()); setTime('09:00');
-    setDuration(60); setSemanal(false); setNoche(false); setError(null);
+    setDuration(60); setSemanal(false); setVence(''); setNoche(false); setError(null);
   };
   const close = () => { reset(); onClose(); };
 
@@ -55,7 +56,9 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
         areaId,
         status: areaId ? 'siguiente' : 'bandeja',
         evening: noche,
-        ...(evento ? { startAt: limaToIso(day, time), durationMin: duration, repeatRule: semanal ? 'semanal' as const : null } : {}),
+        ...(evento
+          ? { startAt: limaToIso(day, time), durationMin: duration, repeatRule: semanal ? 'semanal' as const : null }
+          : vence ? { dueAt: limaToIso(vence, '23:59') } : {}),
       });
       close();
       showToast('Guardado');
@@ -88,6 +91,7 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
             <div className="flex items-end"><Switch label="Cada semana" checked={semanal} onChange={setSemanal} /></div>
           </div>
         )}
+        {!evento && <Field label="Fecha límite" type="date" value={vence} onChange={(e) => setVence(e.target.value)} hint="Opcional" />}
         <Switch label="Esta noche" checked={noche} onChange={setNoche} />
         {error && <p role="alert" className="m-0 text-[13px] font-semibold text-pink-text">{error}</p>}
         <Button type="button" block onClick={() => void guardar()} disabled={title.trim() === ''} loading={create.isPending}>

@@ -10,6 +10,8 @@ const PORT = 4320;
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: false,
+  // Dos archivos a la vez como máximo: con más, el Supabase local y el navegador se quedan sin conexiones.
+  workers: 2,
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: 'list',

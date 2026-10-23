@@ -6,10 +6,11 @@ import type { Area, ItemStatus } from '@/lib/types';
 import { DetailScreen, EmptyState, ListRow, Loading, StatusChip } from '@/ui';
 import { MapPin } from 'lucide-react';
 
-const ABIERTOS: ItemStatus[] = ['bandeja', 'siguiente', 'en_curso', 'esperando', 'algun_dia'];
+// Todo menos lo descartado: lo hecho también se ve, con su estado.
+const VISIBLES: ItemStatus[] = ['bandeja', 'siguiente', 'en_curso', 'esperando', 'algun_dia', 'hecho'];
 
 const AreaItems: React.FC<{ area: Area }> = ({ area }) => {
-  const { data, isPending } = useItems({ areaId: area.id, status: ABIERTOS });
+  const { data, isPending } = useItems({ areaId: area.id, status: VISIBLES });
   if (isPending || !data) return <Loading />;
   if (data.length === 0) return <EmptyState icon={<MapPin size={28} />} title="Nada aquí todavía." text="Captura algo con + y elige esta área." />;
   return (
