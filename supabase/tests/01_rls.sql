@@ -54,17 +54,18 @@ select is(
   'otro usuario ve 0 ítems'
 );
 
--- (d) Vuelve el dueño: no existe política de delete, así que borrar no quita nada.
+-- (d) Vuelve el dueño: borrar está prohibido a nivel de privilegios (la base lo
+-- rechaza con 42501; no depende de que RLS filtre filas).
 select set_config(
   'request.jwt.claims',
   json_build_object('sub', current_setting('test.dueno'), 'role', 'authenticated')::text,
   true
 );
-delete from items;
-select is(
-  (select count(*) from items),
-  1::bigint,
-  'borrar no quita ninguna fila aun siendo el dueño'
+select throws_ok(
+  $$delete from items$$,
+  '42501',
+  'permission denied for table items',
+  'borrar es un error de permiso aun siendo el dueño'
 );
 
 -- (e) Un título de solo espacios lo rechaza la base.

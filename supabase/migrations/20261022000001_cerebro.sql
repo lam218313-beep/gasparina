@@ -7,6 +7,7 @@
 --     (area_counters es la excepción: no lleva owner_id, cuelga de su área.)
 --   * RLS activo: el dueño ve, crea y edita lo suyo; nadie más ve nada.
 --   * No hay política de delete: nada se borra, se descarta con status = 'descartado'.
+--     Tampoco hay privilegio de DELETE ni de TRUNCATE (ver "Privilegios" al final).
 --   * item_events y area_counters no tienen política de escritura: solo las llenan
 --     los disparadores (security definer) que llegan en la migración siguiente.
 
@@ -220,3 +221,36 @@ create policy area_counters_select on public.area_counters
       where a.id = area_counters.area_id and a.owner_id = (select auth.uid())
     )
   );
+
+-- ---------------------------------------------------------------------------
+-- Privilegios (GRANT): la segunda capa, debajo de RLS.
+-- ---------------------------------------------------------------------------
+-- Sin esto las tablas dan 42501 (permission denied) en la nube: la nube ya no reparte permisos
+-- solas a las tablas nuevas, y el local tampoco (config.toml: auto_expose_new_tables = false).
+-- RLS decide qué filas ve cada dueño; los privilegios deciden qué operaciones existen.
+--
+-- Primero se quita todo a anon y authenticated (aunque la configuración no reparta SELECT,
+-- INSERT, UPDATE ni DELETE solos, el Postgres de Supabase deja TRUNCATE, REFERENCES y TRIGGER
+-- a esos roles, y TRUNCATE no pasa por RLS). Después se da solo lo que hace falta:
+--   * anon (sin sesión): nada.
+--   * authenticated (el dueño con sesión): leer las 7 tablas; crear y editar en las 5 suyas;
+--     item_events y area_counters solo se leen (R4: las llenan disparadores security definer).
+--     Nunca borrar ni vaciar: "sin borrado" vale también a nivel de privilegios.
+--   * service_role (el enchufe de la fase 2, que salta RLS): todo, tablas y secuencias.
+revoke all on
+  public.areas, public.sources, public.items, public.item_links,
+  public.item_events, public.suggestions, public.area_counters
+from anon, authenticated;
+revoke all on sequence public.item_events_id_seq from anon, authenticated;
+
+grant select, insert, update on
+  public.areas, public.sources, public.items, public.item_links, public.suggestions
+to authenticated;
+
+grant select on public.item_events, public.area_counters to authenticated;
+
+grant all on
+  public.areas, public.sources, public.items, public.item_links,
+  public.item_events, public.suggestions, public.area_counters
+to service_role;
+grant all on sequence public.item_events_id_seq to service_role;
