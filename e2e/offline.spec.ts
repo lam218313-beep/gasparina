@@ -40,6 +40,22 @@ test('al volver la señal, los cambios se envían y sobreviven a la recarga', as
   await expect(page.getByRole('article', { name: 'Dos' })).toHaveCount(1);
 });
 
+test('ordenar sin señal mueve la tarjeta al instante y el cambio llega al volver', async ({ page, context }) => {
+  await page.goto('/bandeja');
+  await capturar(page, 'Cuatro');
+  const tarjeta = page.getByRole('article', { name: 'Cuatro' });
+  await expect(tarjeta).toBeVisible();
+  await context.setOffline(true);
+  await tarjeta.getByRole('button', { name: 'Universidad' }).click();
+  await tarjeta.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(tarjeta).toHaveCount(0);
+  await expect(franja(page)).toContainText('1 cambio');
+  await context.setOffline(false);
+  await expect(franja(page)).toHaveCount(0, { timeout: 15_000 });
+  await page.goto('/mapa/area/universidad');
+  await expect(page.getByRole('listitem').filter({ hasText: 'Cuatro' })).toBeVisible();
+});
+
 test('una importancia marcada sin señal persiste al volver y recargar', async ({ page, context }) => {
   await page.goto('/');
   await capturar(page, 'Tres', 'Personal');

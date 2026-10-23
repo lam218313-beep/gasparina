@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { fmtDay, fmtHour } from '@/lib/dates';
-import { useCreateItem, useEvents, useItem, useItems, useUpdateItem } from '@/lib/queries';
+import { useAreas, useCreateItem, useEvents, useItem, useItems, useUpdateItem } from '@/lib/queries';
 import { STATUSES, STATUS_LABEL, type Importance, type Item, type ItemStatus } from '@/lib/types';
-import { Button, DetailScreen, ErrorState, ImportanceDots, Loading, Section } from '@/ui';
+import { AreaPicker, Button, DetailScreen, ErrorState, ImportanceDots, Loading, Section, avisar } from '@/ui';
 import { EditarSheet } from './EditarSheet';
 import { Historial } from './Historial';
 import { ItemRow } from './ItemRow';
@@ -15,19 +15,22 @@ const Ficha: React.FC<{ item: Item }> = ({ item }) => {
   const { data: hijos = [] } = useItems({ parentId: item.id, status: VISIBLES });
   const { data: events = [] } = useEvents(item.id);
   const { data: origen } = useItem(item.origin_item_id ?? undefined);
+  const { data: areas = [] } = useAreas();
   const update = useUpdateItem();
   const create = useCreateItem();
   const [editando, setEditando] = useState(false);
   const [nuevaTarea, setNuevaTarea] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const cambiar = async (patch: { status: ItemStatus } | { importance: Importance }) => {
-    setError(null);
-    try {
-      await update.mutateAsync({ id: item.id, patch: { version: item.version, ...patch } });
-    } catch (e) {
-      setError(e instanceof Error && e.message === 'version' ? 'Cambió en otro lado. Recarga.' : (e as Error).message);
+  const avisarError = (e: unknown) =>
+    avisar(e instanceof Error && e.message === 'version' ? 'Cambió en otro lado. Recarga.' : `No se pudo guardar: ${(e as Error).message}`, 3000);
+
+  // El cambio se ve al instante y viaja solo (o espera en cola sin señal).
+  const cambiar = (patch: { status: ItemStatus } | { importance: Importance } | { areaId: string }) => {
+    if ('status' in patch && !item.effective_area_id && patch.status !== 'bandeja' && patch.status !== 'descartado') {
+      avisar('Elige un área primero', 2500);
+      return;
     }
+    update.mutate({ id: item.id, patch: { version: item.version, ...patch } }, { onError: avisarError });
   };
 
   return (
@@ -46,13 +49,12 @@ const Ficha: React.FC<{ item: Item }> = ({ item }) => {
         <select
           aria-label="Estado"
           value={item.status}
-          onChange={(e) => void cambiar({ status: e.target.value as ItemStatus })}
-          disabled={update.isPending}
+          onChange={(e) => cambiar({ status: e.target.value as ItemStatus })}
           className="h-[34px] rounded-full bg-raised border border-edge px-3 text-xs font-extrabold text-white"
         >
           {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
-        <ImportanceDots value={item.importance} onChange={(v) => void cambiar({ importance: v })} />
+        <ImportanceDots value={item.importance} onChange={(v) => cambiar({ importance: v })} />
         {item.due_at && <span className="text-[13px] font-bold text-text-2">Vence {fmtDay(item.due_at)}</span>}
         {item.kind === 'evento' && item.start_at && (
           <span className="text-[13px] font-bold text-text-2">
@@ -60,7 +62,10 @@ const Ficha: React.FC<{ item: Item }> = ({ item }) => {
           </span>
         )}
       </div>
-      {error && <p role="alert" className="m-0 text-[13px] font-semibold text-pink-text">{error}</p>}
+      {/* Un ítem suelto (sin padre) elige su área aquí; uno con padre la hereda. */}
+      {item.parent_id === null && (
+        <AreaPicker areas={areas} value={item.area_id} onChange={(id) => { if (id) cambiar({ areaId: id }); }} />
+      )}
 
       <Section title="Nació de">
         {origen ? (
@@ -84,7 +89,7 @@ const Ficha: React.FC<{ item: Item }> = ({ item }) => {
 
       {editando && <EditarSheet item={item} open onClose={() => setEditando(false)} />}
       <NombreSheet open={nuevaTarea} title="Nueva tarea" onClose={() => setNuevaTarea(false)}
-        onCreate={async (titulo) => { await create.mutateAsync({ title: titulo, parentId: item.id, areaId: null, status: 'siguiente' }); }} />
+        onCreate={(titulo) => create.mutate({ id: crypto.randomUUID(), title: titulo, parentId: item.id, areaId: null, status: 'siguiente' }, { onError: avisarError })} />
     </DetailScreen>
   );
 };

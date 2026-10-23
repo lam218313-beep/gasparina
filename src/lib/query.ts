@@ -6,6 +6,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { createItem, updateItem } from './cerebro';
+import { registrarFallo } from './fallos';
 import type { ItemPatch, NewItem } from './types';
 
 const DIA = 24 * 60 * 60_000;
@@ -29,12 +30,33 @@ export const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Todos los cambios comparten un carril: salen uno tras otro, en el orden en que se hicieron, también
+ * al reanudar la cola. Dos cambios al mismo ítem llevan versiones seguidas y a la vez se pisarían.
+ */
+export const MUTATION_SCOPE = { id: 'cerebro' };
+
+/** Un cambio que la base rechaza sin que haya una pantalla esperando (cola restaurada) queda registrado. */
+const alFallar = (error: unknown) => registrarFallo(error instanceof Error ? error.message : String(error));
+
 // Un cambio hecho sin señal queda en cola y se guarda en el celular; si la app se cierra, al abrirla
 // se restaura y se envía. Para eso la cola necesita saber cómo ejecutar cada tipo de cambio por su clave.
-queryClient.setMutationDefaults(['createItem'], { mutationFn: (input: NewItem) => createItem(input) });
-queryClient.setMutationDefaults(['updateItem'], { mutationFn: ({ id, patch }: { id: string; patch: ItemPatch }) => updateItem(id, patch) });
+queryClient.setMutationDefaults(['createItem'], {
+  mutationFn: (input: NewItem) => createItem(input),
+  scope: MUTATION_SCOPE,
+  onError: alFallar,
+});
+queryClient.setMutationDefaults(['updateItem'], {
+  mutationFn: ({ id, patch }: { id: string; patch: ItemPatch }) => updateItem(id, patch),
+  scope: MUTATION_SCOPE,
+  onError: alFallar,
+});
 
 export const persister = createSyncStoragePersister({ storage: window.localStorage, key: 'cerebro-cache' });
 
-/** Cuánto vale la caché guardada antes de descartarla (un día). */
-export const CACHE_MAX_AGE = DIA;
+/**
+ * Lo guardado nunca caduca por edad: si caducara, se iría también la cola de cambios sin enviar
+ * (una captura hecha sin señal un viernes se perdería el lunes). Las consultas viejas no estorban:
+ * al restaurar se invalidan todas (main.tsx) y gcTime limpia las que nadie usa.
+ */
+export const CACHE_MAX_AGE = Infinity;

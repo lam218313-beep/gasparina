@@ -11,6 +11,7 @@ const ABIERTOS: ItemStatus[] = ['bandeja', 'siguiente', 'en_curso', 'esperando',
 export const MapaScreen: React.FC = () => {
   const { data: areas, isPending, error, refetch } = useAreas();
   const { data: abiertos = [] } = useItems({ status: ABIERTOS });
+  const { data: descartadas = [] } = useItems({ status: ['descartado'] });
   return (
     <Screen title="Mapa">
       {isPending ? (
@@ -40,6 +41,11 @@ export const MapaScreen: React.FC = () => {
             );
           })}
         </ul>
+      )}
+      {descartadas.length > 0 && (
+        <Link to="/mapa/descartadas" className="self-start text-[13px] font-bold text-text-3 no-underline underline-offset-4 hover:underline">
+          Descartadas · {descartadas.length}
+        </Link>
       )}
     </Screen>
   );

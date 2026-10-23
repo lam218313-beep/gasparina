@@ -63,6 +63,28 @@ test('Siguiente sin área pide elegir una y no mueve el ítem', async ({ page })
   await expect(tarjeta).toBeVisible();
 });
 
+test('descartar pide confirmar antes de esconder la tarjeta', async ({ page }) => {
+  await page.goto('/');
+  const hoja = await abrirCaptura(page);
+  await hoja.getByPlaceholder('¿Qué hay que hacer?').fill('Por error');
+  await hoja.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByRole('status')).toHaveText('Guardado');
+  await page.goto('/bandeja');
+  const tarjeta = page.getByRole('article', { name: 'Por error' });
+  await tarjeta.getByRole('button', { name: 'Descartar' }).click();
+  await expect(tarjeta).toBeVisible();
+  await tarjeta.getByRole('button', { name: '¿Seguro? Descartar' }).click();
+  await expect(tarjeta).toHaveCount(0);
+});
+
+test('"Esta noche" solo existe para los eventos', async ({ page }) => {
+  await page.goto('/');
+  const hoja = await abrirCaptura(page);
+  await expect(hoja.getByLabel('Esta noche')).toHaveCount(0);
+  await hoja.getByLabel('Es un evento').check();
+  await expect(hoja.getByLabel('Esta noche')).toHaveCount(1);
+});
+
 test('capturar un evento con hora', async ({ page }) => {
   await page.goto('/');
   const hoja = await abrirCaptura(page);

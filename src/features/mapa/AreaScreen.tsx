@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router';
 import { useAreas, useCreateItem, useItems, useProjectProgress } from '@/lib/queries';
 import type { Area, Item, ItemStatus } from '@/lib/types';
-import { Button, DetailScreen, ListRow, Loading, Section, StatusChip } from '@/ui';
+import { Button, DetailScreen, ListRow, Loading, Section, StatusChip, avisar } from '@/ui';
 import { ItemRow } from './ItemRow';
 import { NombreSheet } from './NombreSheet';
 
@@ -59,7 +59,10 @@ const AreaBody: React.FC<{ area: Area }> = ({ area }) => {
         )}
       </Section>
       <NombreSheet open={nuevo} title="Nuevo proyecto" onClose={() => setNuevo(false)}
-        onCreate={async (titulo) => { await create.mutateAsync({ title: titulo, kind: 'proyecto', status: 'en_curso', areaId: area.id }); }} />
+        onCreate={(titulo) => create.mutate(
+          { id: crypto.randomUUID(), title: titulo, kind: 'proyecto', status: 'en_curso', areaId: area.id },
+          { onError: (e) => avisar(`No se pudo crear: ${(e as Error).message}`, 3000) },
+        )} />
     </>
   );
 };

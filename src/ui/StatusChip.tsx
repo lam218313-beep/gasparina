@@ -1,8 +1,9 @@
 import React from 'react';
 import { Inbox, ArrowRight, Play, Hourglass, Moon, Check, X } from 'lucide-react';
+import type { ItemStatus } from '@/lib/types';
 
-/** Los siete estados de un ítem, tal como los guarda la base (`items.status`). */
-export type Status = 'bandeja' | 'siguiente' | 'en_curso' | 'esperando' | 'algun_dia' | 'hecho' | 'descartado';
+/** Los siete estados de un ítem, tal como los guarda la base (`items.status`): una sola lista, en lib/types. */
+export type Status = ItemStatus;
 
 /** El estado siempre lleva icono y palabra, nunca solo color. Solo negros, grises y rosa. */
 const STYLES: Record<Status, { label: string; cls: string; Icon: React.FC<{ size?: number; strokeWidth?: number }> }> = {

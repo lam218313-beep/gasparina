@@ -1,0 +1,6 @@
+# Todo el texto se guarda con saltos de línea LF, también en Windows: así gradlew, los scripts y el SQL
+# no cambian de forma según quién los toque.
+* text=auto eol=lf
+*.png binary
+*.jks binary
+*.keystore binary

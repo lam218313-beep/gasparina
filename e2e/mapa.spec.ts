@@ -56,6 +56,23 @@ test('el historial cuenta la creación y el cambio de estado', async ({ page }) 
   await expect(historial).toContainText('Estado: siguiente → hecho');
 });
 
+test('lo descartado se puede ver y recuperar', async ({ page }) => {
+  await page.goto('/mapa/area/pixely');
+  await page.getByRole('link').filter({ hasText: 'Campaña Casa Norte' }).click();
+  await page.getByRole('list', { name: 'Dentro' }).getByRole('link').filter({ hasText: 'Tarea dos' }).click();
+  await page.getByLabel('Estado').selectOption('descartado');
+  await expect(page.getByLabel('Estado')).toHaveValue('descartado');
+  await page.goto('/mapa');
+  const enlace = page.getByRole('link', { name: /Descartadas/ });
+  await expect(enlace).toContainText('1');
+  await enlace.click();
+  await page.getByRole('list', { name: 'Descartadas' }).getByRole('link').filter({ hasText: 'Tarea dos' }).click();
+  await page.getByLabel('Estado').selectOption('siguiente');
+  await expect(page.getByLabel('Estado')).toHaveValue('siguiente');
+  await page.goto('/mapa');
+  await expect(page.getByRole('link', { name: /Descartadas/ })).toHaveCount(0);
+});
+
 test('nada puede quedar dentro de sí mismo', async ({ page }) => {
   await page.goto('/mapa/area/pixely');
   await page.getByRole('link').filter({ hasText: 'Campaña Casa Norte' }).click();

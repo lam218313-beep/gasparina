@@ -11,6 +11,7 @@ import { HoyScreen } from './features/hoy/HoyScreen';
 import { MapaScreen } from './features/mapa/MapaScreen';
 import { AreaScreen } from './features/mapa/AreaScreen';
 import { ItemScreen } from './features/mapa/ItemScreen';
+import { DescartadasScreen } from './features/mapa/DescartadasScreen';
 import { BandejaScreen } from './features/bandeja/BandejaScreen';
 import { startNativeShell } from './lib/native';
 import { RouteError } from '@/ui/ErrorBoundary';
@@ -33,6 +34,7 @@ const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
         children: [
           { path: 'mapa/area/:slug', element: <AreaScreen /> },
           { path: 'mapa/item/:id', element: <ItemScreen /> },
+          { path: 'mapa/descartadas', element: <DescartadasScreen /> },
         ],
       },
     ],
