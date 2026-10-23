@@ -11,7 +11,7 @@ export const BandejaScreen: React.FC = () => {
     <Screen title="Bandeja">
       {isPending ? (
         <Loading />
-      ) : error ? (
+      ) : error && !data ? (
         <ErrorState message={error.message} onRetry={() => void refetch()} />
       ) : data.length === 0 ? (
         <EmptyState icon={<Inbox size={28} />} title="Nada por ordenar." text="Lo que captures sin área aparece aquí." />

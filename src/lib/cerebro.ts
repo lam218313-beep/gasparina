@@ -85,7 +85,8 @@ function toRow(input: Partial<NewItem>): ItemsUpdate {
 export async function createItem(input: NewItem): Promise<Item> {
   const id = input.id ?? crypto.randomUUID();
   const { error } = await supabase.from('items').insert({ id, ...toRow(input), title: input.title.trim() });
-  if (error) throw new Error(mensaje(error));
+  // 23505 = ese id ya existe: un reintento tras un corte de señal cuyo primer envío sí llegó. No se duplica.
+  if (error && error.code !== '23505') throw new Error(mensaje(error));
   return getItem(id);
 }
 

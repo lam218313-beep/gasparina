@@ -10,3 +10,4 @@ export * from './ErrorBoundary';
 export * from './AreaChip';
 export * from './ImportanceDots';
 export * from './Toast';
+export * from './OfflineBar';

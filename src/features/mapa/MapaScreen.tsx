@@ -15,7 +15,7 @@ export const MapaScreen: React.FC = () => {
     <Screen title="Mapa">
       {isPending ? (
         <Loading />
-      ) : error ? (
+      ) : error && !areas ? (
         <ErrorState message={error.message} onRetry={() => void refetch()} />
       ) : (
         <ul role="list" aria-label="Áreas" className="list-none m-0 p-0 flex flex-col gap-3">

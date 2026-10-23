@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router';
 import { Plus } from 'lucide-react';
-import { TabBar } from '@/ui';
+import { OfflineBar, TabBar } from '@/ui';
 import { CapturarSheet } from '@/features/capturar/CapturarSheet';
 
 /** El marco de las pestañas: el contenido se desliza, la barra flota encima y el + captura desde cualquier pestaña. */
@@ -9,6 +9,7 @@ export const TabsLayout: React.FC = () => {
   const [capturando, setCapturando] = useState(false);
   return (
     <div className="min-h-full">
+      <OfflineBar />
       <div className="mx-auto max-w-[480px] min-h-full">
         <Outlet />
       </div>
@@ -29,6 +30,7 @@ export const TabsLayout: React.FC = () => {
 /** Las pantallas de detalle (un área, un ítem) van sin barra de pestañas: el botón Volver las saca. */
 export const DetailLayout: React.FC = () => (
   <div className="min-h-full">
+    <OfflineBar />
     <div className="mx-auto max-w-[480px] min-h-full">
       <Outlet />
     </div>

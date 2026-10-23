@@ -93,7 +93,7 @@ const Ficha: React.FC<{ item: Item }> = ({ item }) => {
 export const ItemScreen: React.FC = () => {
   const { id } = useParams();
   const { data: item, isPending, error, refetch } = useItem(id);
+  if (item) return <Ficha item={item} />;
   if (isPending) return <DetailScreen back="/mapa"><Loading /></DetailScreen>;
-  if (error || !item) return <DetailScreen back="/mapa"><ErrorState message={error?.message ?? 'No se encontró'} onRetry={() => void refetch()} /></DetailScreen>;
-  return <Ficha item={item} />;
+  return <DetailScreen back="/mapa"><ErrorState message={error?.message ?? 'No se encontró'} onRetry={() => void refetch()} /></DetailScreen>;
 };

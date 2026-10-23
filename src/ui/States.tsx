@@ -3,7 +3,7 @@ import { WifiOff, LoaderCircle } from 'lucide-react';
 import { Button } from './Button';
 
 export const Loading: React.FC<{ label?: string }> = ({ label = 'Cargando' }) => (
-  <div role="status" className="flex flex-col items-center justify-center gap-3 py-20 text-text-3">
+  <div role="progressbar" aria-label={label} className="flex flex-col items-center justify-center gap-3 py-20 text-text-3">
     <LoaderCircle size={32} className="animate-spin motion-reduce:animate-none text-pink" aria-hidden />
     <span className="text-sm font-semibold">{label}</span>
   </div>

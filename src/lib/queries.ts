@@ -55,11 +55,35 @@ function optimistic(item: Item, patch: ItemPatch): Item {
   return next;
 }
 
+/** Cómo se ve un ítem recién capturado antes de que la base lo confirme (sin código corto todavía). */
+function provisional(input: NewItem, id: string): Item {
+  const now = new Date().toISOString();
+  return {
+    id, owner_id: '', title: input.title.trim(), kind: input.kind ?? 'tarea', status: input.status ?? 'bandeja',
+    body: input.body ?? null, area_id: input.areaId ?? null, parent_id: input.parentId ?? null,
+    origin_item_id: input.originItemId ?? null, origin_source_id: input.originSourceId ?? null,
+    importance: input.importance ?? null, due_at: input.dueAt ?? null, start_at: input.startAt ?? null,
+    duration_min: input.durationMin ?? null, repeat_rule: input.repeatRule ?? null, evening: input.evening ?? false,
+    focus_on: null, external_ref: null, short_id: null, seq: null, created_by: 'user', version: 1,
+    created_at: now, updated_at: now, done_at: null,
+    effective_area_id: input.areaId ?? null, effective_importance: input.importance ?? null,
+    path: null, area_slug: null, area_color: null,
+  };
+}
+
 export function useCreateItem() {
   const qc = useQueryClient();
   return useMutation({
     mutationKey: ['createItem'],
     mutationFn: (input: NewItem) => createItem(input),
+    // Si quien captura ya puso el id, lo capturado aparece en la bandeja al instante (también sin señal).
+    onMutate: async (input) => {
+      if (!input.id || (input.status ?? 'bandeja') !== 'bandeja') return;
+      const key = keys.items({ status: ['bandeja'] });
+      await qc.cancelQueries({ queryKey: key });
+      const nuevo = provisional(input, input.id);
+      qc.setQueryData<Item[]>(key, (old) => [...(old ?? []).filter((i) => i.id !== nuevo.id), nuevo]);
+    },
     onSettled: (data) => {
       void qc.invalidateQueries({ queryKey: ['items'] });
       void qc.invalidateQueries({ queryKey: ['today'] });

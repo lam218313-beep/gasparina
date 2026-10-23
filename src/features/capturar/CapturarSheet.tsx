@@ -45,12 +45,15 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
   };
   const close = () => { reset(); onClose(); };
 
-  const guardar = async () => {
+  // No se espera a la base: la hoja se cierra al instante y el cambio se envía (o queda en cola sin señal).
+  // Si la base lo rechaza, el aviso llega después, en el mismo toast.
+  const guardar = () => {
     const t = title.trim();
     if (!t) return;
     setError(null);
-    try {
-      await create.mutateAsync({
+    create.mutate(
+      {
+        id: crypto.randomUUID(),
         title: t,
         kind: evento ? 'evento' : 'tarea',
         areaId,
@@ -59,12 +62,11 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
         ...(evento
           ? { startAt: limaToIso(day, time), durationMin: duration, repeatRule: semanal ? 'semanal' as const : null }
           : vence ? { dueAt: limaToIso(vence, '23:59') } : {}),
-      });
-      close();
-      showToast('Guardado');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo guardar');
-    }
+      },
+      { onError: (e) => showToast(`No se pudo guardar: ${e instanceof Error ? e.message : ''}`) },
+    );
+    close();
+    showToast('Guardado');
   };
 
   return (
@@ -78,7 +80,7 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
           rows={3}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void guardar(); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); guardar(); } }}
           className="w-full rounded-[16px] border border-line bg-ink px-[18px] py-3.5 text-[18px] leading-snug text-white placeholder:text-text-3 outline-none focus:border-pink-text resize-none"
         />
         <AreaPicker areas={areas} value={areaId} onChange={setAreaId} />
@@ -94,7 +96,7 @@ export const CapturarSheet: React.FC<{ open: boolean; onClose: () => void }> = (
         {!evento && <Field label="Fecha límite" type="date" value={vence} onChange={(e) => setVence(e.target.value)} hint="Opcional" />}
         <Switch label="Esta noche" checked={noche} onChange={setNoche} />
         {error && <p role="alert" className="m-0 text-[13px] font-semibold text-pink-text">{error}</p>}
-        <Button type="button" block onClick={() => void guardar()} disabled={title.trim() === ''} loading={create.isPending}>
+        <Button type="button" block onClick={guardar} disabled={title.trim() === ''}>
           Guardar
         </Button>
       </Sheet>

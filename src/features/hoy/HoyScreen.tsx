@@ -22,7 +22,7 @@ export const HoyScreen: React.FC = () => {
     <Screen title="Hoy" action={<span className="text-[13px] font-bold text-text-3">{fmtDay(new Date().toISOString())}</span>}>
       {isPending ? (
         <Loading />
-      ) : error ? (
+      ) : error && !data ? (
         <ErrorState message={error.message} onRetry={() => void refetch()} />
       ) : (
         <>
