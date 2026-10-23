@@ -12,6 +12,7 @@ import { MapaScreen } from './features/mapa/MapaScreen';
 import { AreaScreen } from './features/mapa/AreaScreen';
 import { ItemScreen } from './features/mapa/ItemScreen';
 import { DescartadasScreen } from './features/mapa/DescartadasScreen';
+import { StreamScreen } from './features/debug/StreamScreen';
 import { BandejaScreen } from './features/bandeja/BandejaScreen';
 import { startNativeShell } from './lib/native';
 import { RouteError } from '@/ui/ErrorBoundary';
@@ -35,6 +36,7 @@ const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
           { path: 'mapa/area/:slug', element: <AreaScreen /> },
           { path: 'mapa/item/:id', element: <ItemScreen /> },
           { path: 'mapa/descartadas', element: <DescartadasScreen /> },
+          { path: 'debug/stream', element: <StreamScreen /> },
         ],
       },
     ],

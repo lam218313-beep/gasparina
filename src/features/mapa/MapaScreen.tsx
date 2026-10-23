@@ -47,6 +47,9 @@ export const MapaScreen: React.FC = () => {
           Descartadas · {descartadas.length}
         </Link>
       )}
+      <Link to="/debug/stream" className="self-start mt-6 text-[12px] font-bold text-text-3 no-underline underline-offset-4 hover:underline">
+        Pruebas
+      </Link>
     </Screen>
   );
 };

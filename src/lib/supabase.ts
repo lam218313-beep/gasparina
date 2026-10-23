@@ -13,3 +13,5 @@ if (!url || !key) {
 }
 
 export const supabase = createClient<Database>(url, key);
+export const SUPABASE_URL: string = url;
+export const SUPABASE_PUBLISHABLE_KEY: string = key;
