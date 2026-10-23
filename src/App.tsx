@@ -5,11 +5,12 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { RequireAuth } from './layouts/RequireAuth';
-import { TabsLayout } from './layouts/TabsLayout';
+import { DetailLayout, TabsLayout } from './layouts/TabsLayout';
 import { EntrarScreen } from './features/entrar/EntrarScreen';
 import { HoyScreen } from './features/hoy/HoyScreen';
 import { MapaScreen } from './features/mapa/MapaScreen';
 import { AreaScreen } from './features/mapa/AreaScreen';
+import { ItemScreen } from './features/mapa/ItemScreen';
 import { BandejaScreen } from './features/bandeja/BandejaScreen';
 import { startNativeShell } from './lib/native';
 import { RouteError } from '@/ui/ErrorBoundary';
@@ -25,7 +26,13 @@ const router = createBrowserRouter([{ errorElement: <RouteError />, children: [
           { index: true, element: <HoyScreen /> },
           { path: 'bandeja', element: <BandejaScreen /> },
           { path: 'mapa', element: <MapaScreen /> },
+        ],
+      },
+      {
+        element: <DetailLayout />,
+        children: [
           { path: 'mapa/area/:slug', element: <AreaScreen /> },
+          { path: 'mapa/item/:id', element: <ItemScreen /> },
         ],
       },
     ],

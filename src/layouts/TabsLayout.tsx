@@ -25,3 +25,12 @@ export const TabsLayout: React.FC = () => {
     </div>
   );
 };
+
+/** Las pantallas de detalle (un área, un ítem) van sin barra de pestañas: el botón Volver las saca. */
+export const DetailLayout: React.FC = () => (
+  <div className="min-h-full">
+    <div className="mx-auto max-w-[480px] min-h-full">
+      <Outlet />
+    </div>
+  </div>
+);

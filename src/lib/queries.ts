@@ -2,7 +2,7 @@
  * Los hooks que usan las pantallas. Cada consulta tiene su clave; cada cambio invalida lo que toca.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createItem, getItem, listAreas, listEvents, listItems, todayItems, updateItem } from './cerebro';
+import { createItem, getItem, listAreas, listEvents, listItems, projectProgress, todayItems, updateItem } from './cerebro';
 import type { Item, ItemFilter, ItemPatch, NewItem } from './types';
 
 export const keys = {
@@ -11,7 +11,12 @@ export const keys = {
   item: (id: string) => ['item', id] as const,
   events: (id: string) => ['events', id] as const,
   today: (day: string) => ['today', day] as const,
+  progress: (id: string) => ['progress', id] as const,
 };
+
+export function useProjectProgress(id: string) {
+  return useQuery({ queryKey: keys.progress(id), queryFn: () => projectProgress(id) });
+}
 
 export function useAreas() {
   return useQuery({ queryKey: keys.areas, queryFn: listAreas });
@@ -58,6 +63,7 @@ export function useCreateItem() {
     onSettled: (data) => {
       void qc.invalidateQueries({ queryKey: ['items'] });
       void qc.invalidateQueries({ queryKey: ['today'] });
+      void qc.invalidateQueries({ queryKey: ['progress'] });
       if (data) {
         void qc.invalidateQueries({ queryKey: keys.item(data.id) });
         void qc.invalidateQueries({ queryKey: keys.events(data.id) });
@@ -83,6 +89,7 @@ export function useUpdateItem() {
     onSettled: (_data, _error, { id }) => {
       void qc.invalidateQueries({ queryKey: ['items'] });
       void qc.invalidateQueries({ queryKey: ['today'] });
+      void qc.invalidateQueries({ queryKey: ['progress'] });
       void qc.invalidateQueries({ queryKey: keys.item(id) });
       void qc.invalidateQueries({ queryKey: keys.events(id) });
     },

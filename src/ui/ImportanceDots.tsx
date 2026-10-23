@@ -14,7 +14,7 @@ export const ImportanceDots: React.FC<{ value: number | null; onChange?: (value:
           {dot}
         </button>
       ) : (
-        <span key={n} className="w-5 h-5 flex items-center justify-center">{dot}</span>
+        <span key={n} className="w-3.5 h-3.5 flex items-center justify-center scale-75">{dot}</span>
       );
     })}
   </div>
