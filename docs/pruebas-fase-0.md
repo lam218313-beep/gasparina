@@ -6,7 +6,7 @@ Lo que ningún documento resuelve y hay que medir en la vida real. Cada prueba d
 
 - **Qué:** la función `prueba-stream` (Supabase, `supabase/functions/prueba-stream`) manda cinco mensajes, uno por segundo. La pantalla `Pruebas` de la app (Mapa › Pruebas, ruta `/debug/stream`) anota en qué milisegundo llegó cada uno, leyendo con `fetch` + `ReadableStream`.
 - **Qué decide:** si las cinco líneas llegan separadas (≈1000, 2000, 3000, 4000, 5000 ms), el asistente de la fase 3 puede escribir "en vivo" en el celular. Si llegan todas juntas al final (≈5000 ms), el WebView no transmite en flujo y la fase 3 usa el plan B (la función escribe los trozos en una tabla y la app los recibe por Realtime).
-- **Resultado:** _pendiente_. Fecha: —. Celular: —. Android: —. Milisegundos: —.
+- **Resultado: SÍ llega en vivo.** Fecha: 24 oct 2026, con la APK firmada 1.0 y datos móviles (4.5G/LTE). Llegadas: 2689, 3653, 4652, 5652 y 6655 ms, y el evento final a los 6656 ms: separación de ≈1000 ms entre mensajes, exactamente el ritmo con que la nube los manda. El primero tardó 2,7 s por el arranque en frío de la función. **Decisión:** la fase 3 escribe el asistente en vivo por SSE con `fetch` + `ReadableStream`; el plan B (Realtime) no hace falta. Prueba hecha por Ronaldo; captura en el chat del 24 oct.
 
 ## 2. Conector desde el celular (OAuth del enchufe MCP)
 

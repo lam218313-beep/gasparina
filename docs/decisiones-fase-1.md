@@ -1,6 +1,6 @@
 # Decisiones de la fase 1
 
-Lo que se decidió durante la construcción sin preguntar (cada línea dice qué, por qué y qué cuesta si está mal), los hallazgos menores que quedaron para después, y lo que la revisión final dejó fuera a propósito. Sale del ledger de ejecución del 22 oct 2026.
+Lo que se decidió durante la construcción sin preguntar (cada línea dice qué, por qué y qué cuesta si está mal), los hallazgos menores que quedaron para después, y lo que la revisión final dejó fuera a propósito. Sale del ledger de ejecución (22 al 24 oct 2026).
 
 ## Decisiones (rulings)
 
@@ -43,6 +43,11 @@ Lo que se decidió durante la construcción sin preguntar (cada línea dice qué
 - Final: Ruling: anon conserva EXECUTE vía PUBLIC en funciones de lectura: corren como invoker bajo RLS y no devuelven nada — costo: ninguno
 - Final: Ruling: un cuarto ítem con focus_on hoy (puesto por otra sesión) queda invisible en Hoy sin aviso: coherente con el tope de 3 — costo: confusión menor; la fase 3 puede avisar
 - Final: Ruling: tareas 11-13 fuera del rango revisado; se revisan con su propio diff cuando se hagan
+- Task 11: Ruling: las migraciones se publicaron por el conector MCP de Supabase (apply_migration) porque el CLI local tiene el token vencido y 'supabase login' abre el navegador (lo hace Ronaldo cuando quiera); las versiones del historial remoto se alinearon por SQL a los nombres de los archivos — costo si está mal: 'supabase migration repair' lo arregla.
+- Task 12: Ruling: la compilación corre con JAVA_HOME apuntando al JDK 21 que trae Android Studio (C:\Program Files\Android\Android Studio\jbr) porque el Java del sistema es 1.8 — costo si está mal: ninguno; está documentado en el plan.
+- Task 12: Ruling: la app se llama Gasparina (decisión de Ronaldo, 24 oct 2026): appName, strings.xml, título, mensaje de arranque, wordmark de Entrar y Screen, README y diseño; el appId pe.lama.cerebro, las claves de almacenamiento, el project_id local y la carpeta 7.-Cerebro no cambian porque no se ven y cambiarlos rompería la instalación o el historial — costo si está mal: nombres técnicos que no coinciden con el visible.
+- Task 12: Ruling: la llave de firma la generó el controlador con keytool y una contraseña aleatoria de 28 caracteres (a pedido de Ronaldo el 24 oct 2026, tras no encontrarse ninguna llave creada por él); la contraseña vive solo en android/keystore.properties (ignorado) y en D:\1.-Pixely\_respaldos\cerebro-firma\LEEME.txt, nunca en el chat ni en el repo; huella SHA256 EA:D7:EF:29… — costo si está mal: si se pierde la carpeta cerebro-firma no hay forma de actualizar la app instalada (igual que con una llave manual).
+- Final: Ruling: la fase 3 usará SSE (fetch + ReadableStream) para el asistente en vivo; el plan B con Realtime queda descartado salvo que otro celular falle — costo si está mal: habría que añadir el camino por Realtime en la fase 3.
 
 ## Hallazgos menores diferidos
 
@@ -80,6 +85,7 @@ Lo que se decidió durante la construcción sin preguntar (cada línea dice qué
 - Final: minor (deferred): aviso de Vite por un chunk > 500 kB; dividir por ruta con lazy antes de la APK
 - Final: minor (deferred): v_items conserva el privilegio por defecto de anon en vistas (inocuo)
 - Final: minor (deferred, ledger): variantes lg: y opener.focus() sin preventScroll en Sheet; ref asignado en render; rama href muerta en ListRow; Field sin aria-describedby; colores PIX/PER parecidos; comentario contradictorio en config.toml; npm audit de @capacitor/assets
+- Final: minor (deferred): tras 'supabase db reset' el Kong local devuelve 502 para auth unos segundos; el fixture e2e ahora reintenta crear el usuario 5 veces.
 
 ## Correcciones de la revisión final
 
@@ -96,3 +102,10 @@ Lo que se decidió durante la construcción sin preguntar (cada línea dice qué
 - Final: fixed I-8 (app) la agenda etiqueta 'Venció <día>' lo atrasado
 - Final: fixed I-9 vitest solo recoge src/**/*.test.{ts,tsx} y recibe variables de prueba — npm run test:unit 6/6
 - Final: fixed menores triados: .gitattributes (eol=lf), StatusChip usa ItemStatus de lib/types, index.html lang=es-PE; config.toml auto_expose_new_tables queda anotado para docs/operacion.md (tarea 11)
+
+## Cierre
+
+- Task 11: hecho hasta el paso 3: quanta pausado; proyecto cerebro zcjufyrloyoewkezqucx (us-east-1, USD 0) creado; 3 migraciones aplicadas; verificación en la nube: 7 tablas, 1 vista, 10 funciones, 4 triggers, 17 políticas, RLS en todas, authenticated sin delete, anon sin select (REST → 42501); .env local escrito; docs/operacion.md y respaldo-base.yml creados. Pendiente de Ronaldo: usuario, registro cerrado, repo en GitHub y secreto SUPABASE_DB_URL.
+- Task 12: complete (APK firmada 1.0 instalada en el celular de Ronaldo el 24 oct 2026; abre, entra y habla con el Supabase real)
+- Task 13: complete (prueba en vivo: llegadas 2689/3653/4652/5652/6655 ms, separación ≈1000 ms → el WebView transmite en flujo; resultado en docs/pruebas-fase-0.md)
+- Plan fase 1: COMPLETO (tareas 1-13), 24 oct 2026.
