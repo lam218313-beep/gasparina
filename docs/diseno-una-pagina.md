@@ -1,4 +1,4 @@
-# Cerebro: diseño en una página
+# Gasparina (antes Cerebro): diseño en una página
 
 Versión 1, 22 oct 2026. Aprobada por Ronaldo el 22 oct 2026.
 
@@ -76,7 +76,7 @@ React 19 + Tailwind 4 + Capacitor 8, igual que Partners. Supabase nuevo (base, l
 
 ## Decisiones que tomé yo (cámbialas si quieres)
 
-- Nombre provisional: **Cerebro**.
+- Nombre: **Gasparina** (decidido el 24 oct 2026; durante el diseño fue "Cerebro", y así sigue llamándose el cerebro de datos y la carpeta del repositorio).
 - Sin conexión: siempre se puede leer; lo que edites sin señal se guarda y se envía al volver. Sin servicios extra.
 - Obsidian fuera de la v1.
 - Supabase: plan gratis. Tu cuenta ya tenía los 2 proyectos activos que permite el plan (pixely_partners y quanta); decidiste el 22 oct 2026 que quanta se pausa y el cerebro usa ese espacio. Se pausa en la fase 1, al crear el proyecto nuevo. Respaldo semanal automático como el de Pixely; Pro cuando pese.

@@ -1,6 +1,6 @@
-# Cerebro
+# Gasparina
 
-La app personal de tareas de Ronaldo con un cerebro en Supabase: capturas, ordenas a mano en la Bandeja, ves el día en Hoy y navegas Área › Proyecto › Tarea en el Mapa.
+Gasparina es la app personal de tareas de Ronaldo, con un cerebro en Supabase: capturas, ordenas a mano en la Bandeja, ves el día en Hoy y navegas Área › Proyecto › Tarea en el Mapa.
 
 - Diseño: `docs/diseno-una-pagina.md`
 - Plan de la fase 1: `docs/superpowers/plans/2026-10-22-fase-1-cerebro.md`

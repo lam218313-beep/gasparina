@@ -34,7 +34,7 @@ export const EntrarScreen: React.FC = () => {
     <div className="min-h-full flex flex-col justify-end px-5 pt-safe pb-safe">
       <div className="mx-auto w-full max-w-[480px] flex flex-col gap-8 pb-8">
         <header className="flex flex-col gap-2">
-          <span className="font-display font-extrabold text-[22px]">cerebro<Dot /></span>
+          <span className="font-display font-extrabold text-[22px]">gasparina<Dot /></span>
           <h1 className="font-display font-bold text-[40px] leading-[1.05] m-0">Entrar<Dot /></h1>
           <p className="m-0 text-[15px] leading-relaxed text-text-2">Todas tus tareas, en un solo lugar.</p>
         </header>

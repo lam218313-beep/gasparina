@@ -7,7 +7,7 @@ import { IconButton } from './Button';
 export const Dot: React.FC = () => <span className="text-pink">.</span>;
 
 export const Wordmark: React.FC<{ size?: number }> = ({ size = 22 }) => (
-  <span className="font-display font-extrabold" style={{ fontSize: size }}>cerebro<Dot /></span>
+  <span className="font-display font-extrabold" style={{ fontSize: size }}>gasparina<Dot /></span>
 );
 
 /**

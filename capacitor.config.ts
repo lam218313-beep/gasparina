@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // La app instalada envuelve la misma compilación web (dist/).
 const config: CapacitorConfig = {
   appId: 'pe.lama.cerebro',
-  appName: 'Cerebro',
+  appName: 'Gasparina',
   webDir: 'dist',
   backgroundColor: '#0A0A0C',
   // https en el WebView: cookies y almacenamiento se comportan como en la web.

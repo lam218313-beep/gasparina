@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Cerebro</string>
-    <string name="title_activity_main">Cerebro</string>
+    <string name="app_name">Gasparina</string>
+    <string name="title_activity_main">Gasparina</string>
     <string name="package_name">pe.lama.cerebro</string>
     <string name="custom_url_scheme">pe.lama.cerebro</string>
 </resources>
