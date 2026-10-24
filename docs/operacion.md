@@ -2,6 +2,10 @@
 
 Cómo se corre, se publica y se cuida. Sin llaves ni contraseñas: esas viven en el panel de Supabase, en los secretos de GitHub y en tu cabeza.
 
+## Dónde vive
+
+- Código: `D:\1.-Pixely\7.-Cerebro` en la computadora, y en GitHub en `lam218313-beep/gasparina` (privado), rama `main` directa.
+
 ## El proyecto real
 
 - Supabase, proyecto **cerebro**, referencia `zcjufyrloyoewkezqucx`, región `us-east-1`, plan gratis (USD 0). URL: `https://zcjufyrloyoewkezqucx.supabase.co`.
