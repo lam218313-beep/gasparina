@@ -37,4 +37,4 @@ Las migraciones viven en `supabase/migrations/` y el historial remoto está alin
 
 ## La APK
 
-La llave de firma (`cerebro.jks`) vive en `D:\1.-Pixely\_respaldos\cerebro-firma\` y en una copia en Drive; nunca en el repositorio. Sin ella no se puede actualizar la app ya instalada. `android/keystore.properties` (ignorado) apunta a esa llave. Cómo se construye e instala: `docs/superpowers/plans/2026-10-22-fase-1-cerebro.md`, tarea 12.
+La llave de firma (`cerebro.jks`, alias `cerebro`, generada el 24 oct 2026) vive en `D:\1.-Pixely\_respaldos\cerebro-firma\` junto con un `LEEME.txt` que guarda su contraseña, y en una copia de esa carpeta en Drive; nunca en el repositorio. Sin ella no se puede actualizar la app ya instalada. `android/keystore.properties` (ignorado) apunta a esa llave; si se pierde, se vuelve a escribir con las cuatro líneas que indica el LEEME. Huella SHA-256 del certificado: `EA:D7:EF:29:6E:62:DB:AE:40:72:4C:83:2D:19:C3:70:F8:EB:E9:5B:A3:02:C6:11:CF:F5:98:B8:58:0E:23:F4`. Cómo se construye e instala: `docs/superpowers/plans/2026-10-22-fase-1-cerebro.md`, tarea 12.
